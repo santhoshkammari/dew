@@ -277,15 +277,11 @@ User Query
 
 -----
 
-## Open Questions for Next Session
+## Resolved Decisions
 
-1. How exactly is `soul.md` created? Which agent writes it and how many searches does it use?
-1. What is the exact schema/format of `soul.md`?
-1. How does the Outcome Agent communicate its goal to every node in the tree?
-1. What stack to build DEW in? (Python? Node.js?)
-1. How do nodes communicate with their parent? (queue? direct callback?)
-1. What model powers each node? (same model for all or different models per role?)
-
+- **Stack:** Python
+- **Node-to-parent communication:** Direct callback — when a node finishes its work, it calls back to its parent
+- **soul.md creation:** Built using Search Tool + Markdown Agent in a loop until the agent's awareness is fully grounded on the topic
 -----
 
 *Project: DEW | Status: Architecture Complete | Ready to Build 🌿*
