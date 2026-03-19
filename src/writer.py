@@ -10,10 +10,10 @@ import asyncio
 import logging
 from pathlib import Path
 
-from agent import Agent
-from ai import LM
-from markdown_agent import MarkdownAgent
-from search import urls_collection
+from .agent import Agent
+from .ai import LM
+from .markdown_agent import MarkdownAgent
+from .search import urls_collection
 
 log = logging.getLogger("dew")
 

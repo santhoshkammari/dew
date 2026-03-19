@@ -8,10 +8,13 @@ search(query) -> list of chroma_ids
 - Returns list of chroma_ids
 """
 
+import logging
 import uuid
 import chromadb
 from ddgs import DDGS
-from fetch import scrapling_get
+from .fetch import scrapling_get
+
+log = logging.getLogger("dew")
 
 MAX_DOC_CHARS = 80_000
 
@@ -42,12 +45,12 @@ def search(query: str, n_results: int = 5) -> list[str]:
         existing = urls_collection.get(where={"url": url}) if url else None
         if existing and existing["ids"]:
             ids.append(existing["ids"][0])
-            print(f"[cache] {title[:60]}")
+            log.debug("[cache] %s", title[:60])
             continue
 
         content = fetch_markdown(url) if url else hit.get("body", "")
         if not content:
-            print(f"[skip]  {title[:60]}")
+            log.debug("[skip]  %s", title[:60])
             continue
 
         doc_id = str(uuid.uuid4())
@@ -57,7 +60,7 @@ def search(query: str, n_results: int = 5) -> list[str]:
             metadatas=[{"url": url, "title": title, "query": query}],
         )
         ids.append(doc_id)
-        print(f"[stored] {title[:60]} ({len(content)} chars)")
+        log.debug("[stored] %s (%d chars)", title[:60], len(content))
 
     return ids
 

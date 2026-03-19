@@ -24,7 +24,7 @@ import asyncio
 import re
 from typing import AsyncGenerator, Callable, Optional
 
-from ai import LM, AgentResult, TextDelta, ToolCall, ToolResult, StepResult, agent as _agent_loop
+from .ai import LM, AgentResult, TextDelta, ToolCall, ToolResult, StepResult, agent as _agent_loop
 
 
 def _strip_think(text: str) -> str:

@@ -13,8 +13,11 @@ Exposed tool:
 """
 import json
 import asyncio
+import warnings
 from typing import List, Dict, Optional, Tuple
 from dataclasses import asdict
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*strip_cdata.*")
 
 from scrapling.fetchers import Fetcher
 from scrapling.core.shell import Convertor

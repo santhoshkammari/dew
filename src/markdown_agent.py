@@ -8,10 +8,10 @@ MarkdownAgent(lm)(chroma_id, question) -> answer string
 """
 
 import asyncio
-from agent import Agent, set_lm
-from ai import LM
-from search import urls_collection
-from markdown_tools import (
+from .agent import Agent, set_lm
+from .ai import LM
+from .search import urls_collection
+from .markdown_tools import (
     markdown_analyzer_get_overview,
     markdown_analyzer_get_headers,
     markdown_analyzer_get_header_by_line,

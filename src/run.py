@@ -17,10 +17,10 @@ import logging
 import sys
 from pathlib import Path
 
-from ai import LM
-from agent import set_lm
-from search import search as _search
-from report.writer import write_report
+from .ai import LM
+from .agent import set_lm
+from .search import search as _search
+from .writer import write_report
 
 LOG_FILE = Path("dew.log")
 
@@ -30,6 +30,9 @@ logging.basicConfig(
     handlers=[logging.FileHandler(LOG_FILE, mode="a")],
 )
 log = logging.getLogger("dew")
+logging.getLogger("scrapling").setLevel(logging.CRITICAL)
+logging.getLogger("primp").setLevel(logging.CRITICAL)
+logging.getLogger("httpx").setLevel(logging.CRITICAL)
 
 VLLM_URL = "http://192.168.170.76:8000/v1"
 MAX_SEARCHES = 3
