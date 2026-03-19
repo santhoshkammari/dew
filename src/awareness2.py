@@ -1,13 +1,13 @@
 """
-awareness.py — Awareness Agent for DEW research pipeline.
+awareness2.py — Awareness Agent v2 with DoubtAgent.
 
-Given a user query, quickly identifies ambiguities and unknowns,
-then spawns parallel agents to resolve only those doubts.
-If nothing is ambiguous, returns immediately — no wasted work.
-
-Step 1: One LM call — extract doubts from query (structured)
-Step 2: For each doubt, spawn a search agent in parallel
-Step 3: Return resolved context dict
+Step 1: DoubtsExtractor — one LM call, extracts doubt strings from query
+Step 2: For each doubt, spawn a DoubtAgent in parallel
+        DoubtAgent has:
+            - search(query) -> doc summaries + doc_ids
+            - subagent(doc_id, prompt) -> spawns MarkdownAgent on that doc
+        It calls these freely until it resolves the doubt.
+Step 3: Return resolved context
 """
 
 import asyncio
@@ -17,11 +17,12 @@ import logging
 from .agent import Agent, set_lm
 from .ai import LM
 from .search import search as _search, urls_collection
+from .markdown import MarkdownAgent
 from .markdown.markdown_tools import markdown_analyzer_get_overview
 
 log = logging.getLogger("dew")
 
-DOUBT_EXTRACTOR_SYSTEM = """You are given a user query. Identify factual unknowns — specific terms, entities, or concepts that are ambiguous and need to be looked up before researching.
+DOUBT_EXTRACTOR_SYSTEM = """You are given a user query. Your job is to identify specific ambiguities or unknowns that need quick clarification before researching.
 
 Only extract doubts that are FACTUAL and can be resolved by searching. Never extract meta-questions about what the user wants.
 
@@ -31,21 +32,23 @@ Examples:
 Query: "how does dspy predict work"
 Output: ["What is dspy.Predict — is it a class, module, or function?", "What is the latest version of DSPy?"]
 
+Query: "find top 5 rag papers"
+Output: ["What does RAG stand for in the context of AI papers?", "Which venues publish top RAG papers — arXiv, ACL, NeurIPS?"]
+
 Query: "what is python list"
 Output: []
 
 Query: "qwen3 moe benchmark"
 Output: ["What is the MoE variant of Qwen3 — model name and params?"]
-
-Query: "how to use langchain runnable"
-Output: ["What is LangChain Runnable — is it an interface or class?"]
 """
 
-DOUBT_RESOLVER_SYSTEM = """You are a fact-checker. You are given a factual doubt about a technical topic.
-Search for it, read the docs, and return a concise factual answer (2-3 sentences).
-You are NOT talking to a user. You find the answer yourself using your tools.
-Use search() to find docs, then get_overview() on the most relevant one.
-Output only the answer — no questions, no asking for clarification."""
+DOUBT_AGENT_SYSTEM = """You are a focused fact-checker. You are given a single doubt/question to resolve.
+
+Use search() to find relevant documents.
+Use subagent(doc_id, prompt) to dig into a specific document and extract precise info.
+
+You decide how many searches and subagent calls to make — do as many as needed.
+When you have a clear answer, output it concisely (2-4 sentences). Facts only. No fluff."""
 
 
 class DoubtsExtractor(Agent):
@@ -57,7 +60,6 @@ class DoubtsExtractor(Agent):
     async def __call__(self, query: str) -> list[str]:
         raw = await super().__call__(f"Query: {query}")
         try:
-            # extract JSON array from response
             start = raw.find("[")
             end = raw.rfind("]") + 1
             if start == -1:
@@ -67,39 +69,40 @@ class DoubtsExtractor(Agent):
             return []
 
 
-class DoubtsResolver(Agent):
-    system = DOUBT_RESOLVER_SYSTEM
+class DoubtAgent(Agent):
+    system = DOUBT_AGENT_SYSTEM
 
     def __init__(self, lm: LM):
+        self._lm = lm
+        self._md_agent = MarkdownAgent(lm=lm)
+
         def search(query: str) -> str:
-            """Search the web for a query. Returns doc summaries."""
+            """Search the web for a query. Returns doc_ids and titles."""
+            log.info("[doubt] search query=%r", query)
             ids = _search(query)
             if not ids:
                 return "No results found."
             summaries = []
-            for doc_id in ids[:3]:
+            for doc_id in ids:
                 r = urls_collection.get(ids=[doc_id])
                 if r["metadatas"]:
                     m = r["metadatas"][0]
                     summaries.append(f"- doc_id={doc_id} | {m.get('title', 'Unknown')} | {m.get('url', '')}")
             return f"Found {len(ids)} docs:\n" + "\n".join(summaries)
 
-        def get_overview(doc_id: str) -> str:
-            """Get fast structural overview of a doc."""
-            r = urls_collection.get(ids=[doc_id])
-            if not r["documents"]:
-                return f"No document found for ID: {doc_id}"
-            doc = r["documents"][0]
-            meta = r["metadatas"][0]
-            overview = markdown_analyzer_get_overview(doc)
-            return f"Source: {meta.get('title', 'Unknown')} ({meta.get('url', '')})\n\n{overview}"
+        async def subagent(doc_id: str, prompt: str) -> str:
+            """Spawn a MarkdownAgent on a doc to extract precise info."""
+            log.info("[doubt] subagent doc_id=%r prompt=%r", doc_id, prompt[:60])
+            result = await self._md_agent(doc_id, prompt)
+            log.info("[doubt] subagent done length=%d", len(result))
+            return result
 
-        super().__init__(lm=lm, tools=[search, get_overview])
+        super().__init__(lm=lm, tools=[search, subagent])
 
     async def __call__(self, doubt: str) -> str:
-        log.info("[awareness] resolving doubt=%r", doubt[:80])
+        log.info("[doubt] resolving=%r", doubt[:80])
         result = await super().__call__(f"Resolve this doubt: {doubt}")
-        log.info("[awareness] resolved length=%d", len(result))
+        log.info("[doubt] resolved length=%d", len(result))
         return result
 
 
@@ -109,23 +112,13 @@ class AwarenessAgent:
         self._extractor = DoubtsExtractor(lm=lm)
 
     async def run(self, query: str) -> dict:
-        """
-        Returns awareness context:
-        {
-            "query": str,
-            "doubts": [str, ...],
-            "resolved": {doubt: answer, ...},
-            "context_summary": str   # ready to pass to next agent
-        }
-        """
         log.info("[awareness] START query=%r", query)
 
-        # Step 1: extract doubts — one fast LM call
         doubts = await self._extractor(query)
         log.info("[awareness] found %d doubts", len(doubts))
 
         if not doubts:
-            log.info("[awareness] no doubts — query is clear, skipping resolution")
+            log.info("[awareness] no doubts — query is clear")
             return {
                 "query": query,
                 "doubts": [],
@@ -133,13 +126,12 @@ class AwarenessAgent:
                 "context_summary": f'Query "{query}" is clear. No ambiguities found.',
             }
 
-        # Step 2: resolve all doubts in parallel
-        resolvers = [DoubtsResolver(lm=self._lm) for _ in doubts]
-        answers = await asyncio.gather(*[r(d) for r, d in zip(resolvers, doubts)])
+        # spawn one DoubtAgent per doubt, all in parallel
+        agents = [DoubtAgent(lm=self._lm) for _ in doubts]
+        answers = await asyncio.gather(*[a(d) for a, d in zip(agents, doubts)])
 
         resolved = dict(zip(doubts, answers))
 
-        # Step 3: build context summary
         lines = [f'Query: "{query}"', "", "Resolved context:"]
         for doubt, answer in resolved.items():
             lines.append(f"- {doubt}\n  → {answer}")
