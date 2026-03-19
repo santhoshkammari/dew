@@ -57,8 +57,8 @@ class DoubtsExtractor(Agent):
     def __init__(self, lm: LM):
         super().__init__(lm=lm, tools=[])
 
-    async def __call__(self, query: str) -> list[str]:
-        raw = await super().__call__(f"Query: {query}")
+    async def forward(self, query: str) -> list[str]:
+        raw = await super().forward(f"Query: {query}")
         try:
             start = raw.find("[")
             end = raw.rfind("]") + 1
@@ -93,15 +93,15 @@ class DoubtAgent(Agent):
         async def subagent(doc_id: str, prompt: str) -> str:
             """Spawn a MarkdownAgent on a doc to extract precise info."""
             log.info("[doubt] subagent doc_id=%r prompt=%r", doc_id, prompt[:60])
-            result = await self._md_agent(doc_id, prompt)
+            result = await self._md_agent.forward(doc_id, prompt)
             log.info("[doubt] subagent done length=%d", len(result))
             return result
 
         super().__init__(lm=lm, tools=[search, subagent])
 
-    async def __call__(self, doubt: str) -> str:
+    async def forward(self, doubt: str) -> str:
         log.info("[doubt] resolving=%r", doubt[:80])
-        result = await super().__call__(f"Resolve this doubt: {doubt}")
+        result = await super().forward(f"Resolve this doubt: {doubt}")
         log.info("[doubt] resolved length=%d", len(result))
         return result
 
@@ -114,7 +114,7 @@ class AwarenessAgent:
     async def run(self, query: str) -> dict:
         log.info("[awareness] START query=%r", query)
 
-        doubts = await self._extractor(query)
+        doubts = await self._extractor.forward(query)
         log.info("[awareness] found %d doubts", len(doubts))
 
         if not doubts:
@@ -128,7 +128,7 @@ class AwarenessAgent:
 
         # spawn one DoubtAgent per doubt, all in parallel
         agents = [DoubtAgent(lm=self._lm) for _ in doubts]
-        answers = await asyncio.gather(*[a(d) for a, d in zip(agents, doubts)])
+        answers = await asyncio.gather(*[a.forward(d) for a, d in zip(agents, doubts)])
 
         resolved = dict(zip(doubts, answers))
 

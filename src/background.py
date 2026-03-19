@@ -107,7 +107,7 @@ class BackgroundAgent(Agent):
         async def extract_from_doc(doc_id: str, question: str) -> str:
             """Deep dive into a doc with a specific question. Spawns a MarkdownAgent."""
             log.info("[background] extract doc_id=%r question=%r", doc_id, question[:60])
-            result = await self._md_agent(doc_id, question)
+            result = await self._md_agent.forward(doc_id, question)
             log.info("[background] extract done length=%d", len(result))
             return result
 
@@ -116,7 +116,7 @@ class BackgroundAgent(Agent):
     async def step(self) -> bool:
         """Run one research step. Returns True if unchecked items remain."""
         log.info("[background] step")
-        await super().__call__("Do your next research step.")
+        await super().forward("Do your next research step.")
         if not SOUL_FILE.exists():
             return False
         soul = SOUL_FILE.read_text()
