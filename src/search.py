@@ -16,8 +16,6 @@ from .fetch import scrapling_get
 
 log = logging.getLogger("dew")
 
-MAX_DOC_CHARS = 80_000
-
 _chroma = chromadb.Client()
 urls_collection = _chroma.get_or_create_collection("urls")
 
@@ -28,7 +26,7 @@ def fetch_markdown(url: str) -> str:
     result = scrapling_get(url, extraction_type="markdown")
     if result["status"] != 200 or not result["content"]:
         return ""
-    return "".join(result["content"])[:MAX_DOC_CHARS]
+    return "".join(result["content"])
 
 
 def search(query: str, n_results: int = 5) -> list[str]:
