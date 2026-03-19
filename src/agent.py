@@ -72,6 +72,10 @@ class Agent:
                 final = _strip_think(event.text)
         return final
 
+    async def forward(self, prompt: str) -> str:
+        """Alias for __call__ — like torch's forward()."""
+        return await self.__call__(prompt)
+
 
 # ── Global LM (set once, use everywhere) ──────────────────────────────────────
 
