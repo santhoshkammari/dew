@@ -41,7 +41,7 @@ DEW is a self-directed, autonomous deep research system. It is NOT a search-and-
 
 ## Core Files
 
-### `soul.md`
+### `soul.md` — built by `soul.py`
 
 - Created at the very start of any query
 - The agent’s **awareness file** — grounds it before any research begins
@@ -51,11 +51,11 @@ DEW is a self-directed, autonomous deep research system. It is NOT a search-and-
 - Think of it like: *an agent reading a codebase before touching it*
 - It is NOT about planning or angles — purely awareness
 
-### `answer.md`
+### `answer.md` — written by nodes via `node.py`
 
 - The **living output file** — built progressively throughout the research
 - Any node at any level can write to it (not just root)
-- Each node autonomously decides: *“is my finding worth adding to answer.md?”*
+- Each node autonomously decides: *”is my finding worth adding to answer.md?”*
 - Final answer lives here
 - Also contains the full progress report so user can see all the work
 
@@ -201,16 +201,6 @@ This mirrors how humans research — you stop when you keep seeing the same pape
 
 -----
 
-## Speed Modes 🏎️
-
-|Mode      |Behavior                                    |
-|----------|--------------------------------------------|
-|**Fast**  |Shallow exploration, quick answer           |
-|**Medium**|Moderate tree depth, balanced report        |
-|**F1**    |Full autonomous exploration until saturation|
-
------
-
 ## Full Architecture
 
 ```
@@ -277,11 +267,27 @@ User Query
 
 -----
 
+## Code Files
+
+| File | Role |
+|------|------|
+| `dew.py` | Main entry point — orchestrates all 3 stages |
+| `soul.py` | Stage 1 — builds `soul.md` awareness document |
+| `outcome.py` | Stage 2 — determines what user expects from research |
+| `node.py` | Stage 3 — recursive research node tree |
+| `markdown_agent.py` | Sub-agent for surgical doc navigation |
+| `search.py` | Search tool — fetches + stores docs in ChromaDB |
+| `chroma_store.py` | ChromaDB collections: urls, concepts, ideas |
+| `agent.py` | Base Agent class |
+| `ai.py` | LM wrapper |
+
 ## Resolved Decisions
 
 - **Stack:** Python
+- **Entry point:** `python dew.py "your query"`
 - **Node-to-parent communication:** Direct callback — when a node finishes its work, it calls back to its parent
-- **soul.md creation:** Built using Search Tool + Markdown Agent in a loop until the agent's awareness is fully grounded on the topic
+- **soul.md creation:** Built using Search Tool in a loop until the agent's awareness is fully grounded on the topic
+
 -----
 
-*Project: DEW | Status: Architecture Complete | Ready to Build 🌿*
+*Project: DEW | Status: Implemented 🌿*

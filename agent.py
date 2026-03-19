@@ -28,7 +28,13 @@ from ai import LM, AgentResult, TextDelta, ToolCall, ToolResult, StepResult, age
 
 
 def _strip_think(text: str) -> str:
-    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # If </think> exists, take only what comes after the last one
+    if "</think>" in text:
+        text = text.split("</think>")[-1].strip()
+    # Remove any remaining unclosed <think> block
+    if "<think>" in text:
+        text = text.split("<think>")[0].strip()
+    return text
 
 
 # ── Base Agent ─────────────────────────────────────────────────────────────────
