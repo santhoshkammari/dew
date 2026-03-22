@@ -1,0 +1,22 @@
+# Eval Tasks for approach3
+
+## Simple
+1. top 5 RAG papers
+2. latest AI news today
+3. what is pagerank and how does it work
+
+## Research Heavy
+4. compare anthropic latest model vs openai latest model on all major benchmarks
+5. top 5 RAG papers with key contributions and results
+
+## Doc Based
+6. summarize this doc: temp.md
+7. find all tables in temp.md
+
+## Repeated Action
+9. run search with query "openai news" 10 times
+
+## Mixed / Hard
+11. search latest RAG papers, find the best one, explain its methodology deeply
+12. compare anthropic vs openai models using web search then summarize in a table
+13. given temp.md find all claims and verify each with a web search
