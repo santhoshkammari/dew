@@ -70,16 +70,27 @@ any long text/ content assume it like  CONTENT.txt
 
 
     a. first reads the first 100 lines, not satifies, read next 100 lines .
+    
     b. then spawns the subagent ( 1 to 80 lies get a glance in 2 lines)
+    
     c. now that is gone from memory, that subagent is workign on its own. 
+    
     d. the new agent only knows that previosu agent reported it like it read 200 liesn and spawend 1 to 80. now goal is read from 80 to findout the next meanitnful minimal cut the subagent can work
+    
     e. it reads 80-120, again tool call 120-180, again tool call 180-200.
+    
     f. satisfies and says 80-200 is to work on , so spawn subagent with task saying read 80-120 liesn of content.
+    
     g. it then loops like this, read(filepath/id, startline,endline) is the curiical tool.
+    
     h. it loops by like feedbackiing the new system prompt ( it maintiant teh track, but also nto making the prompt huge, basially like when task is going on instead of writing in prompt like done 1to 20, done 20 to 50, done 50 to 100, it just write done 1-100. make it clearcut. and its the main part that breathes adn makes the life of agent keep going)
+
     i. it has tail aka child collector, that collects the spawend subagenst all the ids ( as subate work and save there contne tin chromadb and return the ids, just liek hwo funciton returns a string), 
+    
     j. one the feebackign one say aka the prompt has like " Task : DONE " keyword then all the content of the chilids are combined into single content and with new id. and here the birth of the new Agent that now works liek this new id becoens its CONTENT.txt and with the feedbackign oens it picks the next work to do. 
+    
     k. the next one obvilsuly knwos that that content is nothing but the glance and it checks if it can condense it down more or not.
+    
     l. it thern reads and agrees to return the content ( not by readign adn agent saying answer), this apporahc reflects the worked in notebook, aka homework is done and instead of saying i have done the homework in this way to teacher, you show the homework that you wrote well.
 
 
