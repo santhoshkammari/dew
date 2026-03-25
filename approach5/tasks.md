@@ -35,3 +35,15 @@ Expected behaviours:
 4. report follows format of a scientic research paper 10 Section format (Abstract,Intro,Background,Architecture,Methodology,ExperimentsHeld,Results,BenchMarks,mConclusion,FutureWork)
 5. Answer should be 100% accurate with zero hallucinations, requeire pin point writing.
 
+### 4. Find a watch under 2k, men analog watch, above 1.5k.
+
+TaskType: ConstrainedExploration
+
+Expected behaviours:
+1. Aware of the time,location,location based top websites
+2. Searches for famouts websites to look into . follow the trend,viral websites, unique neice style bended websites, explore blogpost or articles to collect the names of websites and brands.
+3. with the condition of >1.5k,<2k,men,analog. search on each of websites
+4. collects 100s of watches 
+5. Each of the 100s of watch shoudl have a theme and perfectly distinct.
+6. if not distinct and matches same then remove it from list. just keep in lower priority
+
