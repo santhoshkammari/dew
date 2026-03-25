@@ -1,0 +1,27 @@
+# Evaluation Tasks
+
+These are the task families the final architecture must cover.
+
+## Web Research
+1. top 5 RAG papers
+2. latest AI news today
+3. what is pagerank and how does it work
+
+## Multi-Step Comparison
+4. compare anthropic latest model vs openai latest model on all major benchmarks
+5. top 5 RAG papers with their key contributions and results
+
+## Local Document Work
+6. summarize this doc: temp.md
+7. find all tables in temp.md
+8. what does section 3 say in temp.md
+9. what does chapter 5 say in document.txt
+
+## Repeated / Batch Execution
+10. run search with query "openai news" 10 times
+11. fetch these 5 urls and summarize each
+
+## Mixed Verification
+12. search latest RAG papers, find the best one, explain its methodology deeply
+13. compare anthropic vs openai models using web search + summarize findings in a table
+14. given temp.md find all claims made and verify each one with a web search
