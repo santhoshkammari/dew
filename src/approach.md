@@ -90,8 +90,53 @@ any long text/ content assume it like  CONTENT.txt
     j. one the feebackign one say aka the prompt has like " Task : DONE " keyword then all the content of the chilids are combined into single content and with new id. and here the birth of the new Agent that now works liek this new id becoens its CONTENT.txt and with the feedbackign oens it picks the next work to do. 
     
     k. the next one obvilsuly knwos that that content is nothing but the glance and it checks if it can condense it down more or not.
-    
+
     l. it thern reads and agrees to return the content ( not by readign adn agent saying answer), this apporahc reflects the worked in notebook, aka homework is done and instead of saying i have done the homework in this way to teacher, you show the homework that you wrote well.
 
 
+
+---
+
+## Streaming Claim Verification (Real-time Grounded Generation)
+
+**Idea:** Master AI generates answers token by token from a huge CONTENT.txt. Every time it emits the special token `CLAIM`, a child verifier AI is instantly spawned to validate that claim — while the master keeps talking.
+
+### How it works:
+
+1. **Master AI** has a system prompt that says:
+   - "Whenever you make a factual statement you're not 100% sure about, emit the token `CLAIM` right before it."
+   - It keeps generating — it doesn't stop or wait.
+
+2. **CLAIM token fires** → a lightweight **Child Verifier AI** is spawned with:
+   - Access to CONTENT.txt (the source of truth)
+   - Access to web search
+   - The claim text extracted (from previous CLAIM to current position / next sentence boundary)
+
+3. **Child Verifier** runs independently and asynchronously:
+   - Checks if the claim is grounded in CONTENT.txt or web
+   - Returns: `{ status: "YES" | "NO", reason: "..." }`
+
+4. **If YES** → master AI gets a tool callback: `claim_verified(claim_id)` → continues uninterrupted, claim tagged as ✓
+
+5. **If NO** → master AI gets a tool feedback: `claim_failed(claim_id, reason="...")` → it backtracks to that claim and regenerates that portion with the correction injected
+
+### Key insight:
+- Master never stops streaming — it talks optimistically
+- Verification happens in parallel, in the background
+- Failed claims cause targeted regeneration of just that segment, not the whole answer
+- Multiple claims can be in-flight simultaneously (CLAIM-1 being verified while CLAIM-2 and CLAIM-3 are already fired)
+
+### Analogy:
+Like a speaker confidently giving a talk while a fact-checker in the back row is live-Googling each bold claim — if something is wrong, a note gets passed up and the speaker corrects mid-flow.
+
+### Token flow example:
+```
+Master: "The model was trained on CLAIM 1.4 trillion tokens CLAIM using a context window of CLAIM 128k tokens..."
+                                    ^fires verifier-1           ^fires verifier-2            ^fires verifier-3
+```
+
+### Why this is powerful:
+- Zero hallucination tolerance on facts, while maintaining fluency
+- No need to pre-chunk or pre-retrieve — retrieval is lazy, triggered by confidence gaps
+- Scales: 1 master + N parallel verifiers = grounded streaming at speed
 
